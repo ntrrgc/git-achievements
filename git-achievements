@@ -80,7 +80,22 @@ function unlock_achievement()
     if [ $? -eq 0 ] ; then
         return
     fi
-    output_achievement "$@" >&2
+
+    # If notify-send is installed, use it instead of writing to terminal (linux)
+    if [ -e "$(which notify-send)" ]; then
+        git_achievements="$(which git-achievements)"
+        git_achievements_dir="$(dirname `readlink "${git_achievements}"` )"
+
+        notify-send \
+            --urgency=low \
+            --expire-time=15000 \
+            --icon=${git_achievements_dir}/git_icon.svg \
+            "Git Achievement Unlocked: $1" "$2"
+    else
+        output_achievement "$@" >&2
+    fi
+
+    # Always write to log
     output_achievement "$@" >> "${ACHIEVEMENTSLOGFILE}"
 
     if [ "`git config --global achievement.upload`" = "true" ] ; then
